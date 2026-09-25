@@ -1,0 +1,14 @@
+# polari-proof-tools — the Lean 4 project the framework's `lean` proof tier checks against (plan §I, pf-2).
+# ONE pinned Lean (lean-toolchain) + Mathlib at ONE pinned commit (lake-manifest.json, D-pf-11: track stable,
+# bump deliberately with the theorems re-checked in the same commit, never float).
+name = "polari_proofs"
+defaultTargets = ["PolariProofs"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "d13f23b723b8a846827a245b89c10fc7d3f11612"   # tag v4.34.1 (its own lean-toolchain = leanprover/lean4:v4.34.1)
+
+[[lean_lib]]
+name = "PolariProofs"
+srcDir = "theorems"
