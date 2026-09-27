@@ -90,10 +90,24 @@ def _theorems():
     return out
 
 
+def _process_block():
+    """res-3 contract: this worker process's resident / peak RSS from /proc/self/status (residentMb, peakMb)."""
+    out = {}
+    try:
+        for line in open('/proc/self/status'):
+            if line.startswith('VmRSS:'):
+                out['residentMb'] = round(int(line.split()[1]) / 1024.0, 1)
+            elif line.startswith('VmHWM:'):
+                out['peakMb'] = round(int(line.split()[1]) / 1024.0, 1)
+    except Exception:
+        pass
+    return out
+
+
 class CapabilityResource:
     def on_get(self, req, resp):
         v = _lean_version()
-        resp.media = {'worker': 'proof-engines', 'engines': {'lean': {'available': bool(v), 'version': v, 'binary': 'lake env lean'}}, 'pins': _pins(), 'project': PROJECT,
+        resp.media = {'worker': 'proof-engines', 'engines': {'lean': {'available': bool(v), 'version': v, 'binary': 'lake env lean'}}, 'resources': {'ramMb': 2000, 'minThreads': 1, 'threadCeiling': 4, 'cpuBenefit': 'sublinear', 'imageMb': 11000, 'fidelity': 'declared', 'note': 'res-2 block (rc-1): Lean + Mathlib oleans; RAM-bound per check'}, 'pins': _pins(), 'project': PROJECT,
                       'theorems': _theorems(), 'protocol': 'POST /check {file | source+name, statement_hash, timeout} — one file, inside the pinned project; the verdict is a certificate only when hash_matches'}
 
 
@@ -105,7 +119,7 @@ class SystemInfoResource:
                 k, _, v = line.partition(':'); info[k.strip()] = int(v.strip().split()[0]) * 1024
         except Exception:
             pass
-        resp.media = {'ok': True, 'worker': 'proof-engines', 'cpus': os.cpu_count(), 'memTotalBytes': info.get('MemTotal', 0), 'memAvailableBytes': info.get('MemAvailable', 0), 'platform': platform.platform()}
+        resp.media = {'process': _process_block(), 'ok': True, 'worker': 'proof-engines', 'cpus': os.cpu_count(), 'memTotalBytes': info.get('MemTotal', 0), 'memAvailableBytes': info.get('MemAvailable', 0), 'platform': platform.platform()}
 
 
 def _bad(resp, msg, status=falcon.HTTP_400):
